@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xml:lang="ja" lang="ja"><head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta http-equiv="content-script-type" content="text/javascript" />
+<meta http-equiv="content-style-type" content="text/css" />
+<title>GMapWidget Library Example: PolyChart - draw chart using Google Maps API</title> 
+<style type="text/css">
+v\:* { behavior:url(#default#VML); }
+#map {
+    width: 100%; height: 400px;
+}
+</style>
+<script type="text/javascript" src="http://maps.google.co.jp/maps?file=api&amp;v=2&amp;sensor=false&amp;key=ABQIAAAAwvXKu9XJZXPCK1v2SNqgkxS-B3Eyzzwa74xWzCutSbCNwWoKgRR4snVymUGgz8nw8aXpHZau3JIc1Q"></script>
+<script type="text/javascript" src="./extlib/ExtendsGMap2.js"></script>
+<script type="text/javascript" src="./PolyChart.js"></script>
+<script type="text/javascript">
+
+    var colors = ["#0000ff","#00cc00"];
+
+    var data0 = [];
+    for(var i = 0; i < 11; ++i ){
+        var x = i;
+        var y = Math.sqrt(x);
+        data0.push({"x":x,"y":y});
+    }
+
+    var data1 = [];
+    for(var i = 0; i < 11; ++i ){
+        var x = i;
+        var y = Math.atan(x);
+        data1.push({"x":x,"y":y});
+    }
+
+    var data = [data0,data1];
+
+    GEvent.addDomListener(window,'load',function (){
+
+        // create instance of GMap2
+        // it need not call the initialize method GMap2#setCenter()
+        var gmap2 = new GMap2( document.getElementById('map') );
+        gmap2.addControl( new GLargeMapControl() );
+
+        // basic usage
+        var chart = new PolyChart(gmap2,data,{"lineColor":colors,"xAxisY":0});
+        // chart.overlay();
+        // --  todo: when zoomend, z-index order of GPolygon and GPolylines is changed by the version of API(?)
+        /* work it (when if you use chart.overlay(), please use it with following listener)
+        GEvent.bind(gmap2,'zoomend',chart,function (oldlevel,newlevel){
+            this.clear();
+            this.overlay();
+        });
+        GEvent.bind(gmap2,'moveend',chart,function (oldlevel,newlevel){
+            this.clear();
+            this.overlay();
+        });
+        */
+        // or two ovarlaying methods you can call
+        chart.addOverlayAxis();
+        chart.addOverlayGraph();
+
+
+        // sample action
+        var openChartPoint = GEvent.callback(chart,function (i,j,label){
+            var pt = chart.getVertex(i,j);
+            this.map.openInfoWindowHtml(pt,
+                '<h3>'+label+'</h3><p>data['+i+']['+j+'] has:<br />x='+ data[i][j].x +' y='+ data[i][j].y+'</p>' );
+        });
+
+        GEvent.addListener(chart.graph[0],'click',function (glatlng,index){
+            if( isNaN(index) ){
+                index = chart.graph[0].getIndexOfVertex(glatlng);
+            }
+            openChartPoint(0,index,"y = Math.sqrt(x)");
+        });
+
+        GEvent.addListener(chart.graph[1],'click',function (glatlng,index){
+            if( isNaN(index) ){
+                index = chart.graph[1].getIndexOfVertex(glatlng);
+            }
+            openChartPoint(1,index,"y = Math.atan(x)");
+        });
+
+        GEvent.trigger(chart.graph[0],'click',chart.graph[0].getVertex(2));
+    });
+
+</script>
+</head><body>
+<div id="map"></div>
+</body></html>
